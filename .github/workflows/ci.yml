@@ -6,7 +6,7 @@ on:
 
 jobs:
   debug:
-    runs-on: watchedsky-runners
+    runs-on: watchedsky-frontend-runners
     permissions:
       contents: read
     steps:
@@ -17,7 +17,7 @@ jobs:
             echo "$EVENT"
   build:
     needs: [debug]
-    runs-on: watchedsky-runners
+    runs-on: watchedsky-frontend-runners
     permissions:
       contents: read
     steps:
