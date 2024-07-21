@@ -30,7 +30,7 @@ jobs:
           verb: call
           # modify to use different function(s) as needed
           module: .
-          args: build-and-publish --registry=$DOCKER_REGISTRY --username=$DOCKER_USERNAME --password=env:DOCKER_PASSWORD --source .
+          args: build-and-publish --registry=$DOCKER_REGISTRY --username=$DOCKER_USERNAME --password=env:DOCKER_PASSWORD --source . --event-json=env:EVENT_JSON
           # assumes the Dagger Cloud token is in
           # a repository secret named DAGGER_CLOUD_TOKEN
           # set via the GitHub UI/CLI
