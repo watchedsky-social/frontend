@@ -5,18 +5,7 @@ on:
     tags: [v*]
 
 jobs:
-  debug:
-    runs-on: watchedsky-frontend-runners
-    permissions:
-      contents: read
-    steps:
-      - shell: bash
-        env:
-          EVENT: ${{ toJSON(github.event) }}
-        run: |
-            echo "$EVENT"
   build:
-    needs: [debug]
     runs-on: watchedsky-frontend-runners
     permissions:
       contents: read
@@ -47,6 +36,7 @@ jobs:
           # set via the GitHub UI/CLI
           cloud-token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
         env:
+          EVENT_JSON: ${{ toJSON(github.event) }}
           DOCKER_REGISTRY: registry.lab.verysmart.house
           DOCKER_USERNAME: ${{ secrets.HARBOR_REGISTRY_USERNAME }}
           # assumes the container registry password is in

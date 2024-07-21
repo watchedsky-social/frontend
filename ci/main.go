@@ -26,8 +26,8 @@ type Frontend struct{}
 // 	return dag.Container()
 // }
 
-func (f *Frontend) BuildEnv(source *dagger.Directory) *dagger.Container {
-	return dag.Container().
+func (f *Frontend) BuildEnv(ctx context.Context, source *dagger.Directory, eventJSON *dagger.Secret) *dagger.Container {
+	container := dag.Container().
 		From("cgr.dev/chainguard/node-lts:latest-dev").
 		WithUser("root").
 		WithFiles("/ci/scripts", []*dagger.File{
@@ -35,14 +35,21 @@ func (f *Frontend) BuildEnv(source *dagger.Directory) *dagger.Container {
 			source.File("ci/scripts/version.cjs"),
 		}).
 		WithDirectory("/src", source).
-		WithEnvVariable("CI", "true").
+		WithEnvVariable("CI", "true")
+
+	json, err := eventJSON.Plaintext(ctx)
+	if err == nil {
+		container = container.WithEnvVariable("EVENT_JSON", json)
+	}
+
+	return container.
 		WithWorkdir("/src").
 		WithExec([]string{"/ci/scripts/version.cjs"}).
 		WithExec([]string{"/ci/scripts/prepare.sh"})
 }
 
-func (f *Frontend) Build(source *dagger.Directory) *dagger.Container {
-	buildEnv := f.BuildEnv(source)
+func (f *Frontend) Build(ctx context.Context, source *dagger.Directory, eventJSON *dagger.Secret) *dagger.Container {
+	buildEnv := f.BuildEnv(ctx, source, eventJSON)
 
 	versionFile := buildEnv.File("/tmp/version.txt")
 
@@ -60,9 +67,12 @@ func (f *Frontend) BuildAndPublish(ctx context.Context,
 	source *dagger.Directory,
 	registry string,
 	username string,
-	password *dagger.Secret) (string, error) {
+	password *dagger.Secret,
+	//+optional
+	eventJSON *dagger.Secret,
+) (string, error) {
 
-	container := f.Build(source)
+	container := f.Build(ctx, source, eventJSON)
 	version, err := container.File("/tmp/version.txt").Contents(ctx)
 	if err != nil {
 		return "", err
