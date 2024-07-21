@@ -37,9 +37,11 @@ func (f *Frontend) BuildEnv(ctx context.Context, source *dagger.Directory, event
 		WithDirectory("/src", source).
 		WithEnvVariable("CI", "true")
 
-	json, err := eventJSON.Plaintext(ctx)
-	if err == nil {
-		container = container.WithEnvVariable("EVENT_JSON", json)
+	if eventJSON != nil {
+		json, err := eventJSON.Plaintext(ctx)
+		if err == nil {
+			container = container.WithEnvVariable("EVENT_JSON", json)
+		}
 	}
 
 	return container.
