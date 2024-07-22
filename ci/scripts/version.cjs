@@ -5,8 +5,6 @@
 const fs = require("fs");
 const {basename} = require("path");
 
-console.log(process.env)
-
 const eventJSON = JSON.parse(process.env.EVENT_JSON ?? '{"ref":"", "head_commit":{"id": "local"}}');
 const pkgJSONPath = process.env.CI ? "/src/package.json" : "./package.json";
 
