@@ -18,13 +18,11 @@ import (
 	"context"
 	"dagger/frontend/internal/dagger"
 	"fmt"
+	"log"
+	"strings"
 )
 
 type Frontend struct{}
-
-// func (f *Frontend) PreBuildEnv(source *dagger.Directory) *dagger.Container {
-// 	return dag.Container()
-// }
 
 func (f *Frontend) BuildEnv(ctx context.Context, source *dagger.Directory, eventJSON *dagger.Secret) *dagger.Container {
 	container := dag.Container().
@@ -65,6 +63,25 @@ func (f *Frontend) Build(ctx context.Context, source *dagger.Directory, eventJSO
 		WithDirectory("/site", builtDir)
 }
 
+func (f *Frontend) GetBuiltSite(ctx context.Context,
+	//+optional
+	source *dagger.Directory,
+	//+optional
+	eventJSON *dagger.Secret,
+	//+optional
+	registry string,
+	//+optional
+	//+default="stable"
+	imageVersion string) *dagger.Directory {
+	if source != nil {
+		return f.Build(ctx, source, eventJSON).Directory("/site")
+	} else {
+		return dag.Container().
+			From(fmt.Sprintf("%s/watchedsky/frontend:%s", registry, imageVersion)).
+			Directory("/site")
+	}
+}
+
 func (f *Frontend) BuildAndPublish(ctx context.Context,
 	source *dagger.Directory,
 	registry string,
@@ -72,15 +89,28 @@ func (f *Frontend) BuildAndPublish(ctx context.Context,
 	password *dagger.Secret,
 	//+optional
 	eventJSON *dagger.Secret,
-) (string, error) {
+) ([]string, error) {
 
-	container := f.Build(ctx, source, eventJSON)
+	container := f.Build(ctx, source, eventJSON).
+		WithRegistryAuth(registry, username, password)
 	version, err := container.File("/tmp/version.txt").Contents(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return container.
-		WithRegistryAuth(registry, username, password).
-		Publish(ctx, fmt.Sprintf("%s/watchedsky/frontend:%s", registry, version))
+	tags := []string{version, "latest"}
+	if !strings.Contains(version, "-") {
+		tags = append(tags, "stable")
+	}
+
+	addrs := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		addr, err := container.Publish(ctx, fmt.Sprintf("%s/watchedsky/frontend:%s", registry, tag))
+		if err != nil {
+			log.Println(tag)
+		}
+		addrs = append(addrs, addr)
+	}
+
+	return addrs, nil
 }
