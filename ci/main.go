@@ -22,7 +22,41 @@ import (
 	"strings"
 )
 
-type Frontend struct{}
+type Frontend struct {
+	//+private
+	//+optional
+	Registry string
+
+	//+private
+	//+optional
+	ImageVersion string
+}
+
+func New(
+	// The registry URL
+	//+optional
+	//+default="registry.lab.verysmart.house"
+	registry string,
+	// The image version to pull from (defaults to latest)
+	//+optional
+	//+default="latest"
+	imageVersion string,
+) *Frontend {
+	return &Frontend{
+		Registry:     registry,
+		ImageVersion: imageVersion,
+	}
+}
+
+func (f *Frontend) WithRegistry(registry string) *Frontend {
+	f.Registry = registry
+	return f
+}
+
+func (f *Frontend) WithImageVersion(imageVersion string) *Frontend {
+	f.ImageVersion = imageVersion
+	return f
+}
 
 func (f *Frontend) BuildEnv(ctx context.Context, source *dagger.Directory, eventJSON *dagger.Secret) *dagger.Container {
 	container := dag.Container().
@@ -76,6 +110,14 @@ func (f *Frontend) GetBuiltSite(ctx context.Context,
 	if source != nil {
 		return f.Build(ctx, source, eventJSON).Directory("/site")
 	} else {
+		if registry == "" {
+			registry = f.Registry
+		}
+
+		if imageVersion == "" {
+			imageVersion = f.ImageVersion
+		}
+
 		return dag.Container().
 			From(fmt.Sprintf("%s/watchedsky/frontend:%s", registry, imageVersion)).
 			Directory("/site")
