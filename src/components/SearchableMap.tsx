@@ -51,30 +51,33 @@ function SearchableMapSearchBox<Value extends Renderable>(
   }, [value, inputValue, fetch]);
 
   return (
-    <Autocomplete
-      id={props.id ? `${props.id}-search` : undefined}
-      className="leaflet-top leaflet-right"
-      sx={{ width: 150 }}
-      getOptionLabel={(o: Value) => o.toString()}
-      filterOptions={(x) => x}
-      options={options}
-      autoComplete
-      includeInputInList={false}
-      filterSelectedOptions
-      value={value}
-      noOptionsText="Type at least 3 characters to search"
-      onChange={(_: unknown, newValue: Value | null) => {
-        setValue(newValue);
-        onSearchValueChange(newValue, map);
-      }}
-      onInputChange={(_: unknown, iv: string) => {
-        setInputValue(iv);
-      }}
-      renderInput={(params) => (
-        <TextField {...params} fullWidth label="Search..." />
-      )}
-      renderOption={(props, option) => option.toElement(props)}
-    />
+    <div className="leaflet-top leaflet-right">
+      <div className="leaflet-control leaflet-bar">
+        <Autocomplete
+          id={props.id ? `${props.id}-search` : undefined}
+          sx={{ width: 150 }}
+          getOptionLabel={(o: Value) => o.toString()}
+          filterOptions={(x) => x}
+          options={options}
+          autoComplete
+          includeInputInList={false}
+          filterSelectedOptions
+          value={value}
+          noOptionsText="Type at least 3 characters to search"
+          onChange={(_: unknown, newValue: Value | null) => {
+            setValue(newValue);
+            onSearchValueChange(newValue, map);
+          }}
+          onInputChange={(_: unknown, iv: string) => {
+            setInputValue(iv);
+          }}
+          renderInput={(params) => (
+            <TextField {...params} fullWidth label="Search..." />
+          )}
+          renderOption={(props, option) => option.toElement(props)}
+        />
+      </div>
+    </div>
   );
 }
 
