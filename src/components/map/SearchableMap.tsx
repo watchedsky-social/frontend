@@ -3,10 +3,10 @@ import { LatLng, Map } from "leaflet";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGeolocated } from "react-geolocated";
 import { MapContainer, TileLayer } from "react-leaflet";
-import { Renderable, SearchableMapProps } from "../types";
+import { Renderable, SearchableMapProps } from "./types";
 
 const defaultCenter: LatLng = new LatLng(44.9, -103.77);
-const defaultZoom: number = 5;
+const defaultZoom: number = 4;
 
 function SearchableMapSearchBox<Value extends Renderable>(
   props: SearchableMapProps<Value> & { map: Map | null }
@@ -24,11 +24,11 @@ function SearchableMapSearchBox<Value extends Renderable>(
           request: { input: string },
           callback: (results?: readonly Value[]) => void
         ) => {
-          Promise.resolve(getRemoteResults(request.input, map)).then(callback);
+          Promise.resolve(getRemoteResults(request.input)).then(callback);
         },
         400
       ),
-    [map, getRemoteResults]
+    [getRemoteResults]
   );
 
   useEffect(() => {
@@ -81,7 +81,7 @@ function SearchableMapSearchBox<Value extends Renderable>(
   );
 }
 
-export default function SearchableMap<Value extends Renderable>(
+export function SearchableMap<Value extends Renderable>(
   props: SearchableMapProps<Value>
 ) {
   const [map, setMap] = useState<Map | null>(null);
@@ -132,7 +132,7 @@ export default function SearchableMap<Value extends Renderable>(
         zoom={zoom}
         scrollWheelZoom={false}
         ref={setMap}
-        style={{ height: 480 }}
+        style={{ width: "100%", height: "40vh" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

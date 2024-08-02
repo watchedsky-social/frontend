@@ -1,40 +1,30 @@
+import { Divider, List, Stack, Typography } from "@mui/material";
+import { LatLng, Map } from "leaflet";
 import { useState } from "react";
 import {
+  ErrorListItems,
+  ForecastZone,
+  ForecastZoneLayer,
+  ForecastZoneListItem,
+  ForecastZoneProps,
   MapSearchResult,
   RenderableMapSearchResult,
-  VisibleZone,
-} from "../types";
-import { LatLng, Map } from "leaflet";
-import { GeoJSON } from "react-leaflet";
-import {
-  Checkbox,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
-import SearchableMap from "../components/SearchableMap";
+  SearchableMap,
+  shortForecastID,
+} from "../components/map";
 
 export default function FindMe() {
-  const [visibleZones, setVisibleZones] = useState<VisibleZone[]>([]);
-  const [selectedZones, setSelectedZones] = useState<VisibleZone[]>([]);
+  const [mapLayers, setMapLayers] = useState<JSX.Element[]>([]);
+  const [listItems, setListItems] = useState<JSX.Element[]>([]);
+  const [selectedZones, setSelectedZones] = useState<string[]>([]);
+  const [activeZone, setActiveZone] = useState<string | null>(null);
 
   const doTypeaheadSearch = async (
     prefix: string,
-    map: Map | null
   ): Promise<RenderableMapSearchResult[]> => {
-    let lng = "0";
-    let lat = "0";
-    if (map) {
-      lng = `${map.getCenter().lng}`;
-      lat = `${map.getCenter().lat}`;
-    }
+
     const params = new URLSearchParams({
       prefix,
-      lng,
-      lat,
     });
 
     const response = await fetch(`/api/v1/typeahead?${params.toString()}`);
@@ -47,11 +37,11 @@ export default function FindMe() {
     val: RenderableMapSearchResult | null,
     map: Map | null
   ) => {
-    if (val && map) {
+    if (val && map && val.result.centroid) {
       map.setView(
         new LatLng(
-          val.result.centroid!.coordinates[1],
-          val.result.centroid!.coordinates[0]
+          val.result.centroid[1],
+          val.result.centroid[0],
         ),
         9
       );
@@ -62,58 +52,89 @@ export default function FindMe() {
     const se = map.getBounds().getSouthEast();
     const nw = map.getBounds().getNorthWest();
 
+    setMapLayers([]);
+    setListItems([]);
+
     const params = new URLSearchParams({
       boxse: `${se.lng},${se.lat}`,
       boxnw: `${nw.lng},${nw.lat}`,
     });
 
     fetch(`/api/v1/zones/visible?${params}`).then((response) => {
-      response.json().then(setVisibleZones);
+      switch (response.status) {
+        case 200:
+          response.json().then((data: ForecastZone[]) => {
+            const layers = [];
+            const listItems = [];
+            for (const zone of data) {
+              const id = shortForecastID(zone.id);
+              layers.push(
+                <ForecastZoneLayer
+                  {...zone}
+                  active={id === activeZone}
+                  selected={selectedZones.includes(id)}
+                />
+              );
+
+              listItems.push(
+                <ForecastZoneListItem
+                  {...zone}
+                  active={id === activeZone}
+                  selected={selectedZones.includes(id)}
+                  onZoneStateChange={onZoneStateChange}
+                />
+              );
+            }
+            setMapLayers(layers);
+            setListItems(listItems);
+          });
+          break;
+        case 204:
+          setListItems([ErrorListItems.none]);
+          break;
+        case 422:
+          setListItems([ErrorListItems.toomany]);
+          break;
+      }
     });
   };
 
-  const handleToggle = (v: VisibleZone) => () => {
-    const currentIndex = selectedZones.indexOf(v);
-    const newSelectedZones = [...selectedZones];
-
-    if (currentIndex === -1) {
-      newSelectedZones.push(v);
-    } else {
-      newSelectedZones.splice(currentIndex, 1);
+  const onZoneStateChange = (p: ForecastZoneProps) => {
+    const idx = selectedZones.indexOf(p.id);
+    if (p.selected) {
+      if (idx === -1) {
+        setSelectedZones([...selectedZones, p.id]);
+        return;
+      }
     }
 
-    setSelectedZones(newSelectedZones);
+    if (idx !== -1) {
+      const newZones = [...selectedZones];
+      newZones.splice(idx, 1);
+      setSelectedZones(newZones);
+    }
+
+    setActiveZone(p.active ? p.id : null);
   };
 
   return (
-    <>
-      <Typography component="h1">Find my Zones</Typography>
+    <Stack
+      direction="column"
+      spacing={2}
+      divider={<Divider orientation="horizontal" flexItem />}
+      sx={{ padding: "10vh 10vw" }}
+    >
+      <Typography variant="h4" textAlign="center">Find my Zones</Typography>
       <SearchableMap
         getRemoteResults={doTypeaheadSearch}
         onSearchValueChange={onLocationSelected}
         onMapChange={onMapChange}
       >
-        {visibleZones.map((z: VisibleZone) => (
-          <GeoJSON data={z.border} />
-        ))}
+        {mapLayers}
       </SearchableMap>
       <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-        {visibleZones.map((z: VisibleZone) => (
-          <ListItem key={z.id} disablePadding>
-            <ListItemButton role={undefined} onClick={handleToggle(z)} dense>
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={selectedZones.indexOf(z) !== -1}
-                  disableRipple
-                  inputProps={{ "aria-labelledby": `${z.id}-select` }}
-                />
-              </ListItemIcon>
-              <ListItemText id={`${z.id}-select`} primary={z.name} />
-            </ListItemButton>
-          </ListItem>
-        ))}
+        {listItems}
       </List>
-    </>
+    </Stack>
   );
 }
