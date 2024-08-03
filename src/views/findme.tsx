@@ -37,13 +37,13 @@ export default function FindMe() {
     val: RenderableMapSearchResult | null,
     map: Map | null
   ) => {
-    if (val && map && val.result.centroid) {
+    if (val && map && val.result.centroid && val.result.centroid.coordinates) {
       map.setView(
         new LatLng(
-          val.result.centroid[1],
-          val.result.centroid[0],
+          val.result.centroid.coordinates[1],
+          val.result.centroid.coordinates[0],
         ),
-        9
+        10
       );
     }
   };

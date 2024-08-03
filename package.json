@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.14",
+    "@types/leaflet": "^1.9.12",
     "@types/node": "22.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -37,7 +38,7 @@
     "typescript": "^5.5.4",
     "vite": "^5.3.4"
   },
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@9.6.0",
   "engines": {
     "node": "^20 || ^22"
   }

@@ -12,7 +12,7 @@ export interface MapSearchResult {
   name: string;
   county: string;
   state: string;
-  centroid?: number[];
+  centroid?: GeoJSON.Point;
 }
 
 

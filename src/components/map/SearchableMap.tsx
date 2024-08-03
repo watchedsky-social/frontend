@@ -55,7 +55,7 @@ function SearchableMapSearchBox<Value extends Renderable>(
       <div className="leaflet-control leaflet-bar">
         <Autocomplete
           id={props.id ? `${props.id}-search` : undefined}
-          sx={{ width: 150 }}
+          sx={{ width: 200, backgroundColor: "rgba(40,40,40,0.5)" }}
           getOptionLabel={(o: Value) => o.toString()}
           filterOptions={(x) => x}
           options={options}
@@ -68,11 +68,14 @@ function SearchableMapSearchBox<Value extends Renderable>(
             setValue(newValue);
             onSearchValueChange(newValue, map);
           }}
+          isOptionEqualToValue={(option: Value, value: Value) => {
+            return option.toString() === value.toString()
+          }}
           onInputChange={(_: unknown, iv: string) => {
             setInputValue(iv);
           }}
           renderInput={(params) => (
-            <TextField {...params} fullWidth label="Search..." />
+            <TextField {...params} />
           )}
           renderOption={(props, option) => option.toElement(props)}
         />
