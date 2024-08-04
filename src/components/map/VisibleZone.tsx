@@ -1,14 +1,6 @@
-import {
-  Checkbox,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-} from "@mui/material";
-import { PathOptions } from "leaflet";
-import { useEffect, useState } from "react";
+import { Chip } from "@mui/material";
 import { GeoJSON } from "react-leaflet";
-import Color from "../colors";
+import { Color } from "../colors";
 import { ForecastZoneProps } from "./types";
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -21,88 +13,45 @@ export const shortForecastID = (id: string): string => {
   return id.substring(idx + 1);
 };
 
-// const longID = (shortID: string): string => {
-//   const typeID = shortID.charAt(2).toUpperCase();
-//   const type = typeID === "C" ? "county" : "forecast";
+export function ForecastZoneLayer(props: ForecastZoneProps & { color?: Color }) {
+  const color = props.color ?? Color.randomXTermColor();
 
-//   return `https://api.weather.gov/zones/${type}/${shortID}`;
-// }
-
-export function ForecastZoneLayer(props: ForecastZoneProps) {
-  const [pathOptions, setPathOptions] = useState<PathOptions>({
-    color: Color.randomXTermColor().toHex(),
-  });
-
-  useEffect(() => {
-    setPathOptions((currentValue: PathOptions) => {
-      currentValue.fill = props.active;
-      currentValue.stroke = props.selected;
-
-      return currentValue;
-    });
-  }, [props.selected, props.active, pathOptions]);
-
-  return (
-    <GeoJSON
-      key={`${shortForecastID(props.id)}-geojson`}
-      data={props.border}
-      style={pathOptions}
-    />
-  );
+  return <GeoJSON data={props.border} style={{ color: color.toHex() }} />;
 }
 
-export function ForecastZoneListItem(
-  props: ForecastZoneProps & {
-    onZoneStateChange?: (newZone: ForecastZoneProps) => void;
-  }
+type MutableZoneStateManager = {
+  onZoneStateChange?: (newZone: ForecastZoneProps) => void | Promise<void>;
+};
+
+export function ForecastZoneChip(
+  props: ForecastZoneProps & MutableZoneStateManager
 ) {
-  const id = `${shortForecastID(props.id)}-listitem`;
+  const id = `${shortForecastID(props.id)}-chip`;
 
-  const onItemHover = () => {
-    if (props.onZoneStateChange) {
-      props.onZoneStateChange({
-        ...props,
-        active: true,
-      });
-    }
-  };
+  const changeZoneState =
+    (state: { active?: boolean; selected?: boolean }) => () => {
+      if (props.onZoneStateChange) {
+        props.onZoneStateChange({
+          ...props,
+          ...state,
+        });
+      }
+    };
 
-  const onItemLeave = () => {
-    if (props.onZoneStateChange) {
-      props.onZoneStateChange({
-        ...props,
-        active: false,
-      });
-    }
-  };
-
-  const onItemClick = () => {
-    if (props.onZoneStateChange) {
-      props.onZoneStateChange({
-        ...props,
-        selected: !props.selected,
-      });
-    }
-  };
+  const onItemHover = changeZoneState({ active: true });
+  const onItemLeave = changeZoneState({ active: false });
+  const onItemSelect = changeZoneState({ selected: true });
+  const onItemDeselect = changeZoneState({ selected: false });
 
   return (
-    <ListItem
+    <Chip
+      label={`${props.name} County, ${props.state}`}
       key={id}
-      disablePadding
+      variant={props.selected ? "filled" : "outlined"}
+      onDelete={props.selected ? onItemDeselect : undefined}
+      onClick={props.selected ? undefined : onItemSelect}
       onMouseOver={onItemHover}
       onMouseLeave={onItemLeave}
-      onClick={onItemClick}
-    >
-      <ListItemButton role={undefined} dense>
-        <ListItemIcon>
-          <Checkbox
-            edge="start"
-            checked={props.selected}
-            inputProps={{ "aria-labelledby": `${id}-name` }}
-          />
-        </ListItemIcon>
-        <ListItemText id={`${id}-name`} primary={props.name} />
-      </ListItemButton>
-    </ListItem>
+    />
   );
 }

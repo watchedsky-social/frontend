@@ -1,28 +1,36 @@
-import { Divider, List, Stack, Typography } from "@mui/material";
+import { Divider, Stack, Typography } from "@mui/material";
 import { LatLng, Map } from "leaflet";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ErrorListItems,
   ForecastZone,
+  ForecastZoneChip,
   ForecastZoneLayer,
-  ForecastZoneListItem,
   ForecastZoneProps,
   MapSearchResult,
   RenderableMapSearchResult,
   SearchableMap,
   shortForecastID,
 } from "../components/map";
+import { Color } from "../components/colors";
 
 export default function FindMe() {
-  const [mapLayers, setMapLayers] = useState<JSX.Element[]>([]);
-  const [listItems, setListItems] = useState<JSX.Element[]>([]);
-  const [selectedZones, setSelectedZones] = useState<string[]>([]);
-  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [renderedLayers, setRenderedLayers] = useState<
+    Record<string, JSX.Element>
+  >({});
+  const [viewportLayers, setViewportLayers] = useState<JSX.Element[]>([]);
+  const [viewportChips, setViewportChips] = useState<JSX.Element[]>([]);
+  const [viewportIDs, setViewportIDs] = useState<string[]>([]);
+
+  const [selectedZoneIDs, setSelectedZoneIDs] = useState<string[]>([]);
+  const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
+  const [fetchedZones, setFetchedZones] = useState<
+    Record<string, ForecastZone>
+  >({});
 
   const doTypeaheadSearch = async (
-    prefix: string,
+    prefix: string
   ): Promise<RenderableMapSearchResult[]> => {
-
     const params = new URLSearchParams({
       prefix,
     });
@@ -41,19 +49,43 @@ export default function FindMe() {
       map.setView(
         new LatLng(
           val.result.centroid.coordinates[1],
-          val.result.centroid.coordinates[0],
+          val.result.centroid.coordinates[0]
         ),
         10
       );
     }
   };
 
+  const onZoneStateChange = useCallback((p: ForecastZoneProps) => {
+    const id = shortForecastID(p.id);
+    if (p.selected) {
+      setSelectedZoneIDs((ids: string[]) => {
+        if (ids.indexOf(id) === -1) {
+          ids.push(id);
+        }
+        return [...ids];
+      });
+      return;
+    }
+
+    setSelectedZoneIDs((ids: string[]) => {
+      const idx = ids.indexOf(id);
+      if (idx !== -1) {
+        ids.splice(idx, 1);
+      }
+      return [...ids];
+    });
+
+    setHighlightedZone(p.active ? id : null);
+  }, []);
+
   const onMapChange = (map: Map) => {
     const se = map.getBounds().getSouthEast();
     const nw = map.getBounds().getNorthWest();
 
-    setMapLayers([]);
-    setListItems([]);
+    setViewportChips([]);
+    setViewportLayers([]);
+    setViewportIDs([]);
 
     const params = new URLSearchParams({
       boxse: `${se.lng},${se.lat}`,
@@ -64,58 +96,91 @@ export default function FindMe() {
       switch (response.status) {
         case 200:
           response.json().then((data: ForecastZone[]) => {
-            const layers = [];
-            const listItems = [];
+            const allLayers = { ...renderedLayers };
+            const allZones = { ...fetchedZones };
+            const vpIDs = [];
             for (const zone of data) {
               const id = shortForecastID(zone.id);
-              layers.push(
-                <ForecastZoneLayer
-                  {...zone}
-                  active={id === activeZone}
-                  selected={selectedZones.includes(id)}
-                />
-              );
+              vpIDs.push(id);
+              if (!(id in allLayers)) {
+                allLayers[id] = (
+                  <ForecastZoneLayer key={`${id}-layer`} {...zone} color={Color.randomXTermColor()}/>
+                );
+              }
 
-              listItems.push(
-                <ForecastZoneListItem
-                  {...zone}
-                  active={id === activeZone}
-                  selected={selectedZones.includes(id)}
-                  onZoneStateChange={onZoneStateChange}
-                />
-              );
+              if (!(id in allZones)) {
+                allZones[id] = zone;
+              }
             }
-            setMapLayers(layers);
-            setListItems(listItems);
+
+            setRenderedLayers(allLayers);
+            setViewportIDs(vpIDs);
+            setFetchedZones(allZones);
           });
           break;
         case 204:
-          setListItems([ErrorListItems.none]);
+          setViewportChips([ErrorListItems.none]);
           break;
         case 422:
-          setListItems([ErrorListItems.toomany]);
+          setViewportChips([ErrorListItems.toomany]);
           break;
       }
     });
   };
 
-  const onZoneStateChange = (p: ForecastZoneProps) => {
-    const idx = selectedZones.indexOf(p.id);
-    if (p.selected) {
-      if (idx === -1) {
-        setSelectedZones([...selectedZones, p.id]);
-        return;
-      }
+  useEffect(() => {
+    const visibleLayers = selectedZoneIDs.map(
+      (id: string) => renderedLayers[id]
+    );
+
+    const sortedVPIDs = viewportIDs.filter(
+      (id) => selectedZoneIDs.indexOf(id) === -1
+    );
+    sortedVPIDs.sort((a: string, b: string) => {
+      const dispA =
+        `${fetchedZones[a].name} county, ${fetchedZones[a].state}`.toLowerCase();
+      const dispB =
+        `${fetchedZones[b].name} county, ${fetchedZones[b].state}`.toLowerCase();
+
+      return dispA.localeCompare(dispB);
+    });
+
+    const visibleChips = selectedZoneIDs.map((id) => (
+      <ForecastZoneChip
+        key={`${id}-chip`}
+        onZoneStateChange={onZoneStateChange}
+        {...fetchedZones[id]}
+        selected={true}
+      />
+    ));
+
+    visibleChips.push(
+      ...sortedVPIDs.map((id) => (
+        <ForecastZoneChip
+          key={`${id}-chip`}
+          onZoneStateChange={onZoneStateChange}
+          {...fetchedZones[id]}
+          selected={false}
+        />
+      ))
+    );
+
+    if (highlightedZone && selectedZoneIDs.indexOf(highlightedZone) === -1) {
+      visibleLayers.push(renderedLayers[highlightedZone]);
     }
 
-    if (idx !== -1) {
-      const newZones = [...selectedZones];
-      newZones.splice(idx, 1);
-      setSelectedZones(newZones);
-    }
+    console.log(visibleChips);
 
-    setActiveZone(p.active ? p.id : null);
-  };
+    setViewportChips(visibleChips);
+    setViewportLayers(visibleLayers);
+  }, [
+    selectedZoneIDs,
+    viewportIDs,
+    highlightedZone,
+    renderedLayers,
+    fetchedZones,
+    onZoneStateChange,
+  ]);
 
   return (
     <Stack
@@ -124,17 +189,24 @@ export default function FindMe() {
       divider={<Divider orientation="horizontal" flexItem />}
       sx={{ padding: "10vh 10vw" }}
     >
-      <Typography variant="h4" textAlign="center">Find my Zones</Typography>
+      <Typography variant="h4" textAlign="center">
+        Find my Zones
+      </Typography>
       <SearchableMap
         getRemoteResults={doTypeaheadSearch}
         onSearchValueChange={onLocationSelected}
         onMapChange={onMapChange}
       >
-        {mapLayers}
+        {viewportLayers}
       </SearchableMap>
-      <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-        {listItems}
-      </List>
+      <Stack
+        spacing={{ xs: 1, sm: 2 }}
+        direction="row"
+        useFlexGap
+        flexWrap="wrap"
+      >
+        {viewportChips}
+      </Stack>
     </Stack>
   );
 }

@@ -9,7 +9,7 @@ export type RandomColorOptions = {
 
 const randLevel = () => Math.floor(Math.random() * xtermLevels.length);
 
-export default class Color {
+export class Color {
   constructor(
     private readonly r: number,
     private readonly g: number,

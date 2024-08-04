@@ -120,6 +120,7 @@ export function SearchableMap<Value extends Renderable>(
       return;
     }
 
+    map.on("load", mapCallback);
     map.on("moveend", mapCallback);
     map.on("zoomend", mapCallback);
     return () => {

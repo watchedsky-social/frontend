@@ -1,4 +1,4 @@
-import { ListItem, ListItemText, Typography } from "@mui/material";
+import { Chip } from "@mui/material";
 import { Map } from "leaflet";
 import { HTMLAttributes, ReactNode } from "react";
 import { MapContainerProps } from "react-leaflet";
@@ -63,6 +63,6 @@ export type SearchableMapProps<Value> = MapContainerProps &
   }
 
   export const ErrorListItems: Record<"none" | "toomany", JSX.Element> = {
-    "none": (<ListItem disablePadding><ListItemText><Typography variant="caption">No forecast zones are visible. Search again or move the map or zoom out. Watchedsky only has data for the US at this time.</Typography></ListItemText></ListItem>),
-    "toomany": (<ListItem disablePadding><ListItemText><Typography variant="caption">Too many forecast zones are visible in this map. Search again or move the map or zoom in.</Typography></ListItemText></ListItem>),
+    "none": (<Chip key="errnoitems" variant="outlined" label="No forecast zones are visible. Search again or move the map or zoom out. Watchedsky only has data for the US at this time" color="warning" />),
+    "toomany": (<Chip key="errtoomanyitems" variant="outlined" label="Too many forecast zones are visible in this map. Search again or move the map or zoom in." color="info" />),
   }
