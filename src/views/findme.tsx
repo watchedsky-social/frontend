@@ -1,6 +1,7 @@
 import { Divider, Stack, Typography } from "@mui/material";
 import { LatLng, Map } from "leaflet";
 import { useCallback, useEffect, useState } from "react";
+import { Color } from "../components/colors";
 import {
   ErrorListItems,
   ForecastZone,
@@ -12,7 +13,7 @@ import {
   SearchableMap,
   shortForecastID,
 } from "../components/map";
-import { Color } from "../components/colors";
+import { SaveDialog } from "../components/SaveDialog";
 
 export default function FindMe() {
   const [renderedLayers, setRenderedLayers] = useState<
@@ -104,7 +105,11 @@ export default function FindMe() {
               vpIDs.push(id);
               if (!(id in allLayers)) {
                 allLayers[id] = (
-                  <ForecastZoneLayer key={`${id}-layer`} {...zone} color={Color.randomXTermColor()}/>
+                  <ForecastZoneLayer
+                    key={`${id}-layer`}
+                    {...zone}
+                    color={Color.randomXTermColor()}
+                  />
                 );
               }
 
@@ -199,13 +204,36 @@ export default function FindMe() {
       >
         {viewportLayers}
       </SearchableMap>
+      <Typography>
+        To use the Watchedsky feed in Bluesky, you have to tell the feed which
+        areas you want to watch. To do that, search the map above -- enter the
+        city name or ZIP code you want to search for and zoom in until results
+        appear (for performance reasons, only 20 results are returned at a
+        time). Once you select all the areas, click the <strong>Save</strong>{" "}
+        button. It will present a code to copy to your Bluesky profile.
+      </Typography>
+      <Stack
+        direction="row"
+        justifyContent="flex-end"
+        alignItems="center"
+        spacing={2}
+      >
+        <SaveDialog selectedZoneIDs={selectedZoneIDs} />
+      </Stack>
       <Stack
         spacing={{ xs: 1, sm: 2 }}
         direction="row"
         useFlexGap
         flexWrap="wrap"
       >
-        {viewportChips}
+        {viewportChips.length === 0 ? (
+          <Typography variant="caption">
+            To get started, search on the map above, and zoom in until results
+            appear
+          </Typography>
+        ) : (
+          viewportChips
+        )}
       </Stack>
     </Stack>
   );
