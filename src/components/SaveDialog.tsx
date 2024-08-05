@@ -13,6 +13,7 @@ import {
   Paper,
   PaperProps,
   Skeleton,
+  Snackbar,
 } from "@mui/material";
 import Draggable from "react-draggable";
 
@@ -32,7 +33,8 @@ function PaperComponent(props: PaperProps) {
 }
 
 export function SaveDialog(props: SaveDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [watchID, setWatchID] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -40,18 +42,22 @@ export function SaveDialog(props: SaveDialogProps) {
   const anchorRef = useRef<HTMLDivElement>(null);
   const textButtonRef = useRef<HTMLButtonElement>(null);
 
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
+
   const handleOpen = () => {
     setWatchID("");
     setLoading(true);
-    setOpen(true);
+    setDialogOpen(true);
     setCopied(false);
+    setSnackbarOpen(false);
 
     const params = new URLSearchParams({
       zones: props.selectedZoneIDs.join(","),
     });
 
     fetch(`/api/v1/zones/watchid?${params.toString()}`).then((response) => {
-      setLoading(false);
       response.json().then((data) => {
         if (!response.ok) {
           setErrorMessage(data.error ?? "An unexpected error occurred");
@@ -59,17 +65,19 @@ export function SaveDialog(props: SaveDialogProps) {
         }
 
         setWatchID(`🌩️👀 ${data.id}`);
+        setLoading(false);
       });
     });
   };
 
   const handleClose = () => {
-    setOpen(false);
+    setDialogOpen(false);
   };
 
   const copyCode = () => {
     navigator.clipboard.writeText(textButtonRef.current!.innerText);
     setCopied(true);
+    setSnackbarOpen(true);
   };
 
   return (
@@ -85,7 +93,7 @@ export function SaveDialog(props: SaveDialogProps) {
       </Button>
       <Dialog
         onClose={handleClose}
-        open={open}
+        open={dialogOpen}
         aria-labelledby="save-zones-dialog"
         PaperComponent={PaperComponent}
       >
@@ -96,7 +104,7 @@ export function SaveDialog(props: SaveDialogProps) {
           aria-label="close"
           onClick={handleClose}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             right: 8,
             top: 8,
             color: (theme) => theme.palette.grey[500],
@@ -123,7 +131,7 @@ export function SaveDialog(props: SaveDialogProps) {
             To use the Watchedsky Bluesky Feed, click the button below to copy
             the text, and paste it somewhere in your Bluesky profile.
           </DialogContentText>
-          <Container sx={{paddingTop: 4}}>
+          <Container sx={{ paddingTop: 4 }}>
             <ButtonGroup size="large" sx={{ width: "100%" }} ref={anchorRef}>
               <Button
                 variant="outlined"
@@ -131,6 +139,7 @@ export function SaveDialog(props: SaveDialogProps) {
                 onClick={copyCode}
                 sx={{ textTransform: "none", width: "90%" }}
                 ref={textButtonRef}
+                disabled={watchID === null}
               >
                 {watchID}
               </Button>
@@ -138,6 +147,7 @@ export function SaveDialog(props: SaveDialogProps) {
                 variant="contained"
                 color={copied ? "success" : "primary"}
                 onClick={copyCode}
+                disabled={watchID === null}
               >
                 {copied ? <Check /> : <ContentCopy />}
               </Button>
@@ -145,6 +155,12 @@ export function SaveDialog(props: SaveDialogProps) {
           </Container>
         </DialogContent>
       </Dialog>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={5000}
+        onClose={handleSnackbarClose}
+        message="Watch ID copied to your clipboard"
+      />
     </>
   );
 }
