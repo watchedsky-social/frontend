@@ -1,40 +1,39 @@
-import { useState } from "react";
+import { Divider, Stack, Typography } from "@mui/material";
+import { LatLng, Map } from "leaflet";
+import { useCallback, useEffect, useState } from "react";
+import { Color } from "../components/colors";
 import {
+  ErrorListItems,
+  ForecastZone,
+  ForecastZoneChip,
+  ForecastZoneLayer,
+  ForecastZoneProps,
   MapSearchResult,
   RenderableMapSearchResult,
-  VisibleZone,
-} from "../types";
-import { LatLng, Map } from "leaflet";
-import { GeoJSON } from "react-leaflet";
-import {
-  Checkbox,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-} from "@mui/material";
-import SearchableMap from "../components/SearchableMap";
+  SearchableMap,
+  shortForecastID,
+} from "../components/map";
+import { SaveDialog } from "../components/SaveDialog";
 
 export default function FindMe() {
-  const [visibleZones, setVisibleZones] = useState<VisibleZone[]>([]);
-  const [selectedZones, setSelectedZones] = useState<VisibleZone[]>([]);
+  const [renderedLayers, setRenderedLayers] = useState<
+    Record<string, JSX.Element>
+  >({});
+  const [viewportLayers, setViewportLayers] = useState<JSX.Element[]>([]);
+  const [viewportChips, setViewportChips] = useState<JSX.Element[]>([]);
+  const [viewportIDs, setViewportIDs] = useState<string[]>([]);
+
+  const [selectedZoneIDs, setSelectedZoneIDs] = useState<string[]>([]);
+  const [highlightedZone, setHighlightedZone] = useState<string | null>(null);
+  const [fetchedZones, setFetchedZones] = useState<
+    Record<string, ForecastZone>
+  >({});
 
   const doTypeaheadSearch = async (
-    prefix: string,
-    map: Map | null
+    prefix: string
   ): Promise<RenderableMapSearchResult[]> => {
-    let lng = "0";
-    let lat = "0";
-    if (map) {
-      lng = `${map.getCenter().lng}`;
-      lat = `${map.getCenter().lat}`;
-    }
     const params = new URLSearchParams({
       prefix,
-      lng,
-      lat,
     });
 
     const response = await fetch(`/api/v1/typeahead?${params.toString()}`);
@@ -47,20 +46,47 @@ export default function FindMe() {
     val: RenderableMapSearchResult | null,
     map: Map | null
   ) => {
-    if (val && map) {
+    if (val && map && val.result.centroid && val.result.centroid.coordinates) {
       map.setView(
         new LatLng(
-          val.result.centroid!.coordinates[1],
-          val.result.centroid!.coordinates[0]
+          val.result.centroid.coordinates[1],
+          val.result.centroid.coordinates[0]
         ),
-        9
+        10
       );
     }
   };
 
+  const onZoneStateChange = useCallback((p: ForecastZoneProps) => {
+    const id = shortForecastID(p.id);
+    if (p.selected) {
+      setSelectedZoneIDs((ids: string[]) => {
+        if (ids.indexOf(id) === -1) {
+          ids.push(id);
+        }
+        return [...ids];
+      });
+      return;
+    }
+
+    setSelectedZoneIDs((ids: string[]) => {
+      const idx = ids.indexOf(id);
+      if (idx !== -1) {
+        ids.splice(idx, 1);
+      }
+      return [...ids];
+    });
+
+    setHighlightedZone(p.active ? id : null);
+  }, []);
+
   const onMapChange = (map: Map) => {
     const se = map.getBounds().getSouthEast();
     const nw = map.getBounds().getNorthWest();
+
+    setViewportChips([]);
+    setViewportLayers([]);
+    setViewportIDs([]);
 
     const params = new URLSearchParams({
       boxse: `${se.lng},${se.lat}`,
@@ -68,52 +94,147 @@ export default function FindMe() {
     });
 
     fetch(`/api/v1/zones/visible?${params}`).then((response) => {
-      response.json().then(setVisibleZones);
+      switch (response.status) {
+        case 200:
+          response.json().then((data: ForecastZone[]) => {
+            const allLayers = { ...renderedLayers };
+            const allZones = { ...fetchedZones };
+            const vpIDs = [];
+            for (const zone of data) {
+              const id = shortForecastID(zone.id);
+              vpIDs.push(id);
+              if (!(id in allLayers)) {
+                allLayers[id] = (
+                  <ForecastZoneLayer
+                    key={`${id}-layer`}
+                    {...zone}
+                    color={Color.randomXTermColor()}
+                  />
+                );
+              }
+
+              if (!(id in allZones)) {
+                allZones[id] = zone;
+              }
+            }
+
+            setRenderedLayers(allLayers);
+            setViewportIDs(vpIDs);
+            setFetchedZones(allZones);
+          });
+          break;
+        case 204:
+          setViewportChips([ErrorListItems.none]);
+          break;
+        case 422:
+          setViewportChips([ErrorListItems.toomany]);
+          break;
+      }
     });
   };
 
-  const handleToggle = (v: VisibleZone) => () => {
-    const currentIndex = selectedZones.indexOf(v);
-    const newSelectedZones = [...selectedZones];
+  useEffect(() => {
+    const visibleLayers = selectedZoneIDs.map(
+      (id: string) => renderedLayers[id]
+    );
 
-    if (currentIndex === -1) {
-      newSelectedZones.push(v);
-    } else {
-      newSelectedZones.splice(currentIndex, 1);
+    const sortedVPIDs = viewportIDs.filter(
+      (id) => selectedZoneIDs.indexOf(id) === -1
+    );
+    sortedVPIDs.sort((a: string, b: string) => {
+      const dispA =
+        `${fetchedZones[a].name} county, ${fetchedZones[a].state}`.toLowerCase();
+      const dispB =
+        `${fetchedZones[b].name} county, ${fetchedZones[b].state}`.toLowerCase();
+
+      return dispA.localeCompare(dispB);
+    });
+
+    const visibleChips = selectedZoneIDs.map((id) => (
+      <ForecastZoneChip
+        key={`${id}-chip`}
+        onZoneStateChange={onZoneStateChange}
+        {...fetchedZones[id]}
+        selected={true}
+      />
+    ));
+
+    visibleChips.push(
+      ...sortedVPIDs.map((id) => (
+        <ForecastZoneChip
+          key={`${id}-chip`}
+          onZoneStateChange={onZoneStateChange}
+          {...fetchedZones[id]}
+          selected={false}
+        />
+      ))
+    );
+
+    if (highlightedZone && selectedZoneIDs.indexOf(highlightedZone) === -1) {
+      visibleLayers.push(renderedLayers[highlightedZone]);
     }
 
-    setSelectedZones(newSelectedZones);
-  };
+    console.log(visibleChips);
+
+    setViewportChips(visibleChips);
+    setViewportLayers(visibleLayers);
+  }, [
+    selectedZoneIDs,
+    viewportIDs,
+    highlightedZone,
+    renderedLayers,
+    fetchedZones,
+    onZoneStateChange,
+  ]);
 
   return (
-    <>
-      <Typography component="h1">Find my Zones</Typography>
+    <Stack
+      direction="column"
+      spacing={2}
+      divider={<Divider orientation="horizontal" flexItem />}
+      sx={{ padding: "10vh 10vw" }}
+    >
+      <Typography variant="h4" textAlign="center">
+        Find my Zones
+      </Typography>
       <SearchableMap
         getRemoteResults={doTypeaheadSearch}
         onSearchValueChange={onLocationSelected}
         onMapChange={onMapChange}
       >
-        {visibleZones.map((z: VisibleZone) => (
-          <GeoJSON data={z.border} />
-        ))}
+        {viewportLayers}
       </SearchableMap>
-      <List sx={{ width: "100%", bgcolor: "background.paper" }}>
-        {visibleZones.map((z: VisibleZone) => (
-          <ListItem key={z.id} disablePadding>
-            <ListItemButton role={undefined} onClick={handleToggle(z)} dense>
-              <ListItemIcon>
-                <Checkbox
-                  edge="start"
-                  checked={selectedZones.indexOf(z) !== -1}
-                  disableRipple
-                  inputProps={{ "aria-labelledby": `${z.id}-select` }}
-                />
-              </ListItemIcon>
-              <ListItemText id={`${z.id}-select`} primary={z.name} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </>
+      <Typography>
+        To use the Watchedsky feed in Bluesky, you have to tell the feed which
+        areas you want to watch. To do that, search the map above -- enter the
+        city name or ZIP code you want to search for and zoom in until results
+        appear (for performance reasons, only 20 results are returned at a
+        time). Once you select all the areas, click the <strong>Save</strong>{" "}
+        button. It will present a code to copy to your Bluesky profile.
+      </Typography>
+      <Stack
+        direction="row"
+        justifyContent="flex-end"
+        alignItems="center"
+        spacing={2}
+      >
+        <SaveDialog selectedZoneIDs={selectedZoneIDs} />
+      </Stack>
+      <Stack
+        spacing={{ xs: 1, sm: 2 }}
+        direction="row"
+        useFlexGap
+        flexWrap="wrap"
+      >
+        {viewportChips.length === 0 ? (
+          <Typography variant="caption">
+            To get started, search on the map above, and zoom in until results
+            appear
+          </Typography>
+        ) : (
+          viewportChips
+        )}
+      </Stack>
+    </Stack>
   );
 }

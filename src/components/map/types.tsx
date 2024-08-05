@@ -1,3 +1,4 @@
+import { Chip } from "@mui/material";
 import { Map } from "leaflet";
 import { HTMLAttributes, ReactNode } from "react";
 import { MapContainerProps } from "react-leaflet";
@@ -5,14 +6,6 @@ import { MapContainerProps } from "react-leaflet";
 export type Point = {
   latitude: number;
   longitude: number;
-};
-
-export type VisibleZone = {
-  id: string;
-  name: string;
-  type: string;
-  state: string;
-  border: GeoJSON.GeoJSON;
 };
 
 export interface MapSearchResult {
@@ -45,7 +38,7 @@ export class RenderableMapSearchResult implements Renderable {
 }
 
 export type SearchableMapAPIProps<Value> = {
-  getRemoteResults: (prefix: string, map: Map | null) => Value[] | Promise<Value[]>;
+  getRemoteResults: (prefix: string) => Value[] | Promise<Value[]>;
   onSearchValueChange: (value: Value | null, map: Map | null) => void;
   onMapChange: (map: Map) => void;
 };
@@ -55,3 +48,21 @@ export type SearchableMapProps<Value> = MapContainerProps &
     id?: string;
     children: JSX.Element[];
   };
+
+  export interface ForecastZone {
+    id: string;
+    name: string;
+    type: string;
+    state: string;
+    border: GeoJSON.GeoJSON;
+  }
+
+  export interface ForecastZoneProps extends ForecastZone {
+    selected?: boolean;
+    active?: boolean;
+  }
+
+  export const ErrorListItems: Record<"none" | "toomany", JSX.Element> = {
+    "none": (<Chip key="errnoitems" variant="outlined" label="No forecast zones are visible. Search again or move the map or zoom out. Watchedsky only has data for the US at this time" color="warning" />),
+    "toomany": (<Chip key="errtoomanyitems" variant="outlined" label="Too many forecast zones are visible in this map. Search again or move the map or zoom in." color="info" />),
+  }

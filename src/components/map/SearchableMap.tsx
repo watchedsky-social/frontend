@@ -3,10 +3,10 @@ import { LatLng, Map } from "leaflet";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useGeolocated } from "react-geolocated";
 import { MapContainer, TileLayer } from "react-leaflet";
-import { Renderable, SearchableMapProps } from "../types";
+import { Renderable, SearchableMapProps } from "./types";
 
 const defaultCenter: LatLng = new LatLng(44.9, -103.77);
-const defaultZoom: number = 5;
+const defaultZoom: number = 4;
 
 function SearchableMapSearchBox<Value extends Renderable>(
   props: SearchableMapProps<Value> & { map: Map | null }
@@ -24,11 +24,11 @@ function SearchableMapSearchBox<Value extends Renderable>(
           request: { input: string },
           callback: (results?: readonly Value[]) => void
         ) => {
-          Promise.resolve(getRemoteResults(request.input, map)).then(callback);
+          Promise.resolve(getRemoteResults(request.input)).then(callback);
         },
         400
       ),
-    [map, getRemoteResults]
+    [getRemoteResults]
   );
 
   useEffect(() => {
@@ -55,7 +55,7 @@ function SearchableMapSearchBox<Value extends Renderable>(
       <div className="leaflet-control leaflet-bar">
         <Autocomplete
           id={props.id ? `${props.id}-search` : undefined}
-          sx={{ width: 150 }}
+          sx={{ width: 200, backgroundColor: "rgba(40,40,40,0.5)" }}
           getOptionLabel={(o: Value) => o.toString()}
           filterOptions={(x) => x}
           options={options}
@@ -68,11 +68,14 @@ function SearchableMapSearchBox<Value extends Renderable>(
             setValue(newValue);
             onSearchValueChange(newValue, map);
           }}
+          isOptionEqualToValue={(option: Value, value: Value) => {
+            return option.toString() === value.toString()
+          }}
           onInputChange={(_: unknown, iv: string) => {
             setInputValue(iv);
           }}
           renderInput={(params) => (
-            <TextField {...params} fullWidth label="Search..." />
+            <TextField {...params} />
           )}
           renderOption={(props, option) => option.toElement(props)}
         />
@@ -81,7 +84,7 @@ function SearchableMapSearchBox<Value extends Renderable>(
   );
 }
 
-export default function SearchableMap<Value extends Renderable>(
+export function SearchableMap<Value extends Renderable>(
   props: SearchableMapProps<Value>
 ) {
   const [map, setMap] = useState<Map | null>(null);
@@ -117,6 +120,7 @@ export default function SearchableMap<Value extends Renderable>(
       return;
     }
 
+    map.on("load", mapCallback);
     map.on("moveend", mapCallback);
     map.on("zoomend", mapCallback);
     return () => {
@@ -132,7 +136,7 @@ export default function SearchableMap<Value extends Renderable>(
         zoom={zoom}
         scrollWheelZoom={false}
         ref={setMap}
-        style={{ height: 480 }}
+        style={{ width: "100%", height: "40vh" }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
