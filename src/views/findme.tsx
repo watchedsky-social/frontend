@@ -209,8 +209,9 @@ export default function FindMe() {
         areas you want to watch. To do that, search the map above -- enter the
         city name or ZIP code you want to search for and zoom in until results
         appear (for performance reasons, only 20 results are returned at a
-        time). Once you select all the areas, click the <strong>Save</strong>{" "}
-        button. It will present a code to copy to your Bluesky profile.
+        time). Once you select all the areas you want to watch, click the{" "}
+        <strong>Save</strong> button. It will present a code to copy to your
+        Bluesky profile.
       </Typography>
       <Stack
         direction="row"
