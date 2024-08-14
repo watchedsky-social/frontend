@@ -3,10 +3,10 @@ export type RecentAlert = {
   headline: string;
   description: string;
   sent: number;
+  area_desc: string;
 };
 
 export type Alert = Omit<RecentAlert, "sent"> & {
-  area_desc: string;
   severity?: string;
   certainty?: string;
   event?: string;
