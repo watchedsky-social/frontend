@@ -1,6 +1,0 @@
-{
-  "name": "frontend",
-  "sdk": "go",
-  "source": "ci",
-  "engineVersion": "v0.12.0"
-}
