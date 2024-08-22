@@ -1,6 +1,0 @@
-build-image:
-  source-config:
-    uri: git@github.com:watchedsky-social/frontend.git
-    private_key: ((frontend-deploy-private-key))
-  image-config:
-    repository: registry.lab.verysmart.house/watchedsky/frontend
