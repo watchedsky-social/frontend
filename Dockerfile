@@ -15,8 +15,8 @@ ENV PATH=$PATH:/usr/local/bin
 RUN ["pnpm", "install"]
 RUN ["pnpm", "run", "build"]
 
-FROM scratch AS release
-WORKDIR /site
+FROM cgr.dev/chainguard/nginx:latest AS release
+WORKDIR /usr/share/nginx/html
 
-COPY --from=build /app/dist/* /site/
+COPY --from=build /app/dist/ .
 
