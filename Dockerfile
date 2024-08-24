@@ -16,7 +16,7 @@ RUN ["pnpm", "install"]
 RUN ["pnpm", "run", "build"]
 
 FROM cgr.dev/chainguard/nginx:latest AS release
-WORKDIR /usr/share/nginx/html
+WORKDIR /www/data
 
 COPY --from=build /app/dist/ .
-
+COPY ./config/frontend.conf /etc/nginx/conf.d/
