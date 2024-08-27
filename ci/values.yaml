@@ -2,4 +2,4 @@ name: frontend
 key: ((frontend-deploy-private-key))
 extra-build-params:
   BUILD_ARG_version: ((.:version))
-  BUILD_ARG_build_id: ((.:build-id))
+  BUILD_ARG_build_id: ((.:buildid))
