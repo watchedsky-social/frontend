@@ -14,6 +14,7 @@ import { Alerts } from "./views/alerts";
 import FindMe from "./views/findme";
 import Home from "./views/home";
 import Root from "./views/root";
+import { AboutPage } from "./views/about";
 
 declare module "@mui/material/styles" {
   interface TypographyVariants {
@@ -97,6 +98,10 @@ const router = createBrowserRouter([
             path: "alerts/:id",
             element: <AlertDetail />,
           },
+          {
+            path: "about",
+            element: <AboutPage />
+          }
         ],
       },
     ],

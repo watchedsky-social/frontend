@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/node:latest AS pnpm
+FROM cgr.dev/chainguard/node:latest-dev AS pnpm
 USER root
 
 RUN npm install -g pnpm
@@ -10,6 +10,14 @@ FROM pnpm AS build
 
 WORKDIR /app
 COPY . /app/
+
+ARG version=0.0.0-dev
+ARG build_id=local
+
+ENV FRONTEND_BUILD_VERSION=${version}
+ENV FRONTEND_BUILD_ID=${build_id}
+
+RUN /app/update-version.js
 
 ENV PATH=$PATH:/usr/local/bin
 RUN ["pnpm", "install"]
