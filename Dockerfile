@@ -17,7 +17,11 @@ ARG build_id=local
 ENV FRONTEND_BUILD_VERSION=${version}
 ENV FRONTEND_BUILD_ID=${build_id}
 
-RUN /app/update-version.js
+USER root
+RUN ./update-version.js
+RUN chown 65532:65532 ./src/version.json
+USER 65532
+
 
 ENV PATH=$PATH:/usr/local/bin
 RUN ["pnpm", "install"]
