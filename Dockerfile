@@ -9,7 +9,7 @@ ENV PATH=$PATH:/usr/local/bin
 FROM pnpm AS build
 
 WORKDIR /app
-COPY . /app/
+COPY --chmod=65532:65532 . /app/
 
 ARG version=0.0.0-dev
 ARG build_id=local
