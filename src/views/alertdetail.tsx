@@ -1,7 +1,7 @@
 import { Container, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLoaderData, useParams } from "react-router-dom";
 import {
   Alert,
   allProps,
@@ -22,6 +22,9 @@ export function AlertDetail() {
     id: id!,
     sent: "",
   });
+
+  const fetchedAlert = useLoaderData() as Alert;
+  setAlert(fetchedAlert);
 
   const fetchAlert = useMemo(
     () => () => {

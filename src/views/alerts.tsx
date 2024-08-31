@@ -7,51 +7,20 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { RecentAlert, relativeTime, shortHeadline, truncateDescription } from "../components/alerts";
+import { Link, useLoaderData } from "react-router-dom";
+import {
+  RecentAlert,
+  relativeTime,
+  shortHeadline,
+  truncateDescription,
+} from "../components/alerts";
 
 export type AlertsProps = {
   pageSize?: number;
 };
 
-const defaultAlertProps: AlertsProps = {
-  pageSize: 25,
-};
-
-export function Alerts(props: AlertsProps = defaultAlertProps) {
-  const [recentAlerts, setRecentAlerts] = useState<RecentAlert[]>([]);
-  const [pageSize, setPageSize] = useState(props.pageSize ?? 25);
-
-  const getAlerts = useMemo(
-    () => () => {
-      fetch(`/api/v1/alerts/recent?lim=${pageSize}`).then((response) => {
-        if (response.ok) {
-          response.json().then(setRecentAlerts);
-        }
-
-        throw {
-          data: response.body,
-          status: response.status,
-          statusText: response.statusText,
-        };
-      });
-    },
-    [pageSize]
-  );
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setRecentAlerts([]);
-    setPageSize(parseInt(event.target.value, 10));
-  };
-
-  useEffect(() => {
-    getAlerts();
-    const refreshInterval = setInterval(getAlerts, 300000);
-    return () => clearInterval(refreshInterval);
-  }, [getAlerts]);
+export function Alerts() {
+  const recentAlerts = useLoaderData() as RecentAlert[];
 
   return (
     <Table>
@@ -87,9 +56,8 @@ export function Alerts(props: AlertsProps = defaultAlertProps) {
               },
             }}
             page={1}
-            rowsPerPage={pageSize}
+            rowsPerPage={25}
             count={recentAlerts.length}
-            onRowsPerPageChange={handleChangeRowsPerPage}
             onPageChange={() => {}}
           />
         </TableRow>

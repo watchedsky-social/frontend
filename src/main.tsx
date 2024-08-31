@@ -9,13 +9,13 @@ import "@fontsource/roboto/700.css";
 import { createTheme, ThemeProvider } from "@mui/material";
 import "leaflet/dist/leaflet.css";
 import "./main.css";
+import { AboutPage } from "./views/about";
 import { AlertDetail } from "./views/alertdetail";
 import { Alerts } from "./views/alerts";
+import { ErrorPage } from "./views/errorpage";
 import FindMe from "./views/findme";
 import Home from "./views/home";
 import Root from "./views/root";
-import { AboutPage } from "./views/about";
-import { ErrorPage } from "./views/errorpage";
 
 declare module "@mui/material/styles" {
   interface TypographyVariants {
@@ -95,10 +95,24 @@ const router = createBrowserRouter([
           {
             path: "alerts",
             element: <Alerts />,
+            loader: async () => {
+              const response = await fetch(`/api/v1/alerts/recent?lim=25`);
+              if (response.status !== 200) {
+                throw new Response(response.statusText, { status: response.status });
+              }
+              return response.json();
+            }
           },
           {
             path: "alerts/:id",
             element: <AlertDetail />,
+            loader: async ({ params }) => {
+              const response = await fetch(`/api/v1/alerts/${params.id}`);
+              if (response.status !== 200) {
+                throw new Response(response.statusText, { status: response.status });
+              }
+              return response.json();
+            }
           },
           {
             path: "about",
