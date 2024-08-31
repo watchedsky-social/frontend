@@ -15,6 +15,7 @@ import FindMe from "./views/findme";
 import Home from "./views/home";
 import Root from "./views/root";
 import { AboutPage } from "./views/about";
+import { ErrorPage } from "./views/errorpage";
 
 declare module "@mui/material/styles" {
   interface TypographyVariants {
@@ -78,6 +79,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <Root />,
+    errorElement: <ErrorPage />,
     children: [
       {
         index: true,

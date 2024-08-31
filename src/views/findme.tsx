@@ -37,9 +37,16 @@ export default function FindMe() {
     });
 
     const response = await fetch(`/api/v1/typeahead?${params.toString()}`);
-    const data = await response.json();
+    if (response.ok) {
+      const data = await response.json();
+      return data.map((x: MapSearchResult) => new RenderableMapSearchResult(x));
+    }
 
-    return data.map((x: MapSearchResult) => new RenderableMapSearchResult(x));
+    throw {
+      data: response.body,
+      status: response.status,
+      statusText: response.statusText,
+    };
   };
 
   const onLocationSelected = (
@@ -129,6 +136,12 @@ export default function FindMe() {
         case 422:
           setViewportChips([ErrorListItems.toomany]);
           break;
+        default:
+          throw {
+            data: response.body,
+            status: response.status,
+            statusText: response.statusText,
+          };
       }
     });
   };

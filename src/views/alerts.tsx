@@ -1,5 +1,3 @@
-import { useEffect, useMemo, useState } from "react";
-import { RecentAlert, shortHeadline } from "../components/alerts";
 import {
   Table,
   TableBody,
@@ -9,8 +7,9 @@ import {
   TablePagination,
   TableRow,
 } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { truncateDescription, relativeTime } from "../components/alerts";
+import { RecentAlert, relativeTime, shortHeadline, truncateDescription } from "../components/alerts";
 
 export type AlertsProps = {
   pageSize?: number;
@@ -30,6 +29,12 @@ export function Alerts(props: AlertsProps = defaultAlertProps) {
         if (response.ok) {
           response.json().then(setRecentAlerts);
         }
+
+        throw {
+          data: response.body,
+          status: response.status,
+          statusText: response.statusText,
+        };
       });
     },
     [pageSize]
