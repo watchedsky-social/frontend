@@ -72,7 +72,7 @@ export default function ProductHero() {
       </Typography>
       <Grid container spacing={1}>
         {recentAlerts.map((alert: RecentAlert) => (
-          <Grid xs={3}>
+          <Grid xs={12} sm={6} md={4} lg={3}>
             <AlertCard alert={alert} key={alert.id} />
           </Grid>
         ))}

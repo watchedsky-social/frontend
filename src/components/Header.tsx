@@ -43,7 +43,9 @@ export default function Header() {
     <AppBar position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Cloud sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} />
+          <IconButton size="large" href="/">
+            <Cloud sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} />
+          </IconButton>
           <Typography
             variant="h6"
             noWrap
@@ -110,7 +112,9 @@ export default function Header() {
               ))}
             </Menu>
           </Box>
-          <Cloud sx={{ display: { xs: "flex", md: "none" }, mr: 1 }} />
+          <IconButton size="large" href="/">
+            <Cloud sx={{ display: { xs: "flex", md: "none" }, mr: 1 }} />
+          </IconButton>
           <Typography
             variant="h5"
             noWrap
