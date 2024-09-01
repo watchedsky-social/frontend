@@ -17,16 +17,16 @@ export function AlertDetail() {
     <Container>
       <Grid container spacing={2}>
         <Grid xs={12}>&nbsp;</Grid>
-        <Grid xs={8}>
+        <Grid xs={12} md={8}>
           <Typography variant="h4">{shortHeadline(alert)}</Typography>
         </Grid>
-        <Grid xs={4}>
+        <Grid xs={12} md={4}>
           <AlertMap alert={alert} />
         </Grid>
-        <Grid xs={3}>
+        <Grid xs={12} md={3}>
           <Typography variant="th">Description</Typography>
         </Grid>
-        <Grid xs={9}>
+        <Grid xs={12} md={9}>
           <Typography variant="code">{alert.description}</Typography>
         </Grid>
         {alert &&

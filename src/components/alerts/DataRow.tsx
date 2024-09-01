@@ -34,10 +34,10 @@ export function DataRow(props: DataRowProps) {
 
   return (
     <>
-      <Grid xs={3}>
+      <Grid xs={12} md={3}>
         <Typography variant="th">{displayName}</Typography>
       </Grid>
-      <Grid xs={9}>
+      <Grid xs={12} md={9}>
         <Typography variant={value ? "inherit" : "placeholder"}>
           {value ? value : "Unknown"}
         </Typography>

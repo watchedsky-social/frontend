@@ -1,4 +1,4 @@
-import { Cloud } from "@mui/icons-material";
+import Cloud from "@mui/icons-material/Cloud";
 import MenuIcon from "@mui/icons-material/Menu";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -41,7 +41,7 @@ export default function Header() {
 
   return (
     <AppBar position="static">
-      <Container maxWidth="xl">
+      <Container sx={{width: "100vw"}}>
         <Toolbar disableGutters>
           <IconButton size="large" href="/">
             <Cloud sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} />
