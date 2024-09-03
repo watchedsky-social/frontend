@@ -44,7 +44,6 @@ export default function ProductHero() {
         align="center"
         variant="h2"
         fontFamily="monospace"
-        letterSpacing="0.3rem"
         fontWeight={700}
       >
         Watchedsky

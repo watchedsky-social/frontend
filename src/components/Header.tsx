@@ -41,7 +41,7 @@ export default function Header() {
 
   return (
     <AppBar position="static">
-      <Container sx={{width: "100vw"}}>
+      <Container sx={{ width: "100vw" }}>
         <Toolbar disableGutters>
           <IconButton size="large" href="/">
             <Cloud sx={{ display: { xs: "none", md: "flex" }, mr: 1 }} />
@@ -56,7 +56,6 @@ export default function Header() {
               display: { xs: "none", md: "flex" },
               fontFamily: "monospace",
               fontWeight: 700,
-              letterSpacing: ".3rem",
               color: "inherit",
               textDecoration: "none",
             }}
